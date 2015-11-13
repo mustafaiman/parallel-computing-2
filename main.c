@@ -62,13 +62,13 @@ int main(int argc, char *argv[]) {
 
 	int partitionSize;
 	int *partitionSimilarities;
-	int *partitionFileIds;
+    int *partitionFileIds;
+    int *fileIds;
+    int *content;
+    int *query;
 
 	if(MY_ID == 0) {
         timeStartSerial = MPI_Wtime();
-		int *fileIds;
-		int *content;
-		int *query;
 		int numberOfFiles;
 		int i;
 		int j;
@@ -148,7 +148,13 @@ int main(int argc, char *argv[]) {
         for (int i=0; i<kvalue; i++) {
             printf("%d\n", kleast[i]);
         }
+        free(kleast);
+        free(fileIds);
+        free(content);
+        free(query);
     }
+    free(partitionSimilarities);
+    free(partitionFileIds);
     
 	MPI_Finalize();
 	return 0;
