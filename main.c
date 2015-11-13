@@ -6,6 +6,8 @@
 
 #include "utils.h"
 
+#define MAX(x,y) ((x) > (y) ? (x) : (y))
+
 void kreduce(int *kleast, int *myids, int *myvals, int k, int world_size, int myid) {
     int *recvReferences;
     int *recvValues;
@@ -16,12 +18,13 @@ void kreduce(int *kleast, int *myids, int *myvals, int k, int world_size, int my
     
     MPI_Gather(myids, k, MPI_INT, recvReferences, k, MPI_INT, 0, MPI_COMM_WORLD);
     MPI_Gather(myvals, k, MPI_INT, recvValues, k, MPI_INT, 0, MPI_COMM_WORLD);
-    printf("Results accumulated\n");
-    for (int i=0; i< world_size * k; i++) {
-        printf("%d %d\n", recvReferences[i], recvValues[i]);
-    }
     
     if(myid == 0) {
+        printf("Results accumulated\n");
+        for (int i=0; i< world_size * k; i++) {
+            printf("%d %d\n", recvReferences[i], recvValues[i]);
+        }
+        
         int *indexes = (int *)malloc(sizeof(int) * world_size);
         memset(indexes, 0, sizeof(int) * world_size);
         
@@ -98,10 +101,10 @@ int main(int argc, char *argv[]) {
 		partitionSize = numberOfFiles / NUM_PROCS + (numberOfFiles % NUM_PROCS == 0 ? 0 : 1);
 		int offset = partitionSize;
 
-		partitionSimilarities = (int *)malloc(sizeof(int) * partitionSize);
+		partitionSimilarities = (int *)malloc(sizeof(int) * MAX(partitionSize, kvalue));
 		memcpy(partitionSimilarities, similarities, partitionSize * sizeof(int));
 
-		partitionFileIds = (int *)malloc(sizeof(int) * partitionSize);
+		partitionFileIds = (int *)malloc(sizeof(int) * MAX(partitionSize, kvalue));
 		memcpy(partitionFileIds, fileIds, partitionSize * sizeof(int));
 
 		for(i=1;i< numberOfFiles % NUM_PROCS;i++) {
@@ -125,14 +128,15 @@ int main(int argc, char *argv[]) {
 
 		MPI_Recv(&partitionSize, 1, MPI_INT, 0, 0xACE5, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
 
-		partitionSimilarities = (int *)malloc(sizeof(int) * partitionSize);
+		partitionSimilarities = (int *)malloc(sizeof(int) * MAX(partitionSize, kvalue));
 		MPI_Recv(partitionSimilarities, partitionSize, MPI_INT, 0, 0xACE5, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
 
-		partitionFileIds = (int *)malloc(sizeof(int) * partitionSize);
+		partitionFileIds = (int *)malloc(sizeof(int) * MAX(partitionSize, kvalue));
 		MPI_Recv(partitionFileIds, partitionSize, MPI_INT, 0, 0xACE5, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
 
 	}
 	int i;
+    /*
 	for(i=0; i<partitionSize; i++) {
 		printf("process-similarities%d %d\n",MY_ID, partitionSimilarities[i]);
 	}
@@ -140,11 +144,17 @@ int main(int argc, char *argv[]) {
 		printf("process-fileIds%d %d\n",MY_ID, partitionFileIds[i]);
 	}
 	printf("\n");
-    
+    */
     printf("Sorting\n");
     modifiedQuickSort(partitionFileIds, partitionSimilarities, 0, partitionSize-1);
+    
+    //If k is larger than partitionSize, this is neccessary to prevent garbage cluttering minimum selection in kreduce
+    for(int i=partitionSize; i<kvalue; i++) {
+        partitionSimilarities[i] = INT_MAX;
+    }
+    
     for(i=0; i<partitionSize; i++) {
-        printf("p%d %d %d\n",MY_ID, partitionSimilarities[i], partitionFileIds[i]);
+        printf("p%d partiiont-size=%d %d %d\n",MY_ID, partitionSize, partitionSimilarities[i], partitionFileIds[i]);
     }
     int *kleast;
     if( MY_ID == 0) {
