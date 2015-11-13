@@ -41,3 +41,51 @@ void readQueryFromFile(char *fileName, int **content, int dictionarySize) {
 
 	fclose(fp);
 }
+
+void modifiedQuickSort(int references[], int values[], int first,int last) {
+    int pivot, j, tempReference, tempValue,i;
+    
+    if(first<last){
+        pivot=first;
+        i=first;
+        j=last;
+        
+        while(i<j){
+            while(values[i] <= values[pivot] && i<last)
+                i++;
+            while(values[j] > values[pivot])
+                j--;
+            if(i<j){
+                tempReference=references[i];
+                references[i]=references[j];
+                references[j]=tempReference;
+                
+                tempValue = values[i];
+                values[i] = values[j];
+                values[j] = tempValue;
+            }
+        }
+        
+        tempReference = references[pivot];
+        references[pivot] = references[j];
+        references[j] = tempReference;
+        
+        tempValue = values[pivot];
+        values[pivot] = values[j];
+        values[j] = tempValue;
+        
+        modifiedQuickSort(references, values, first, j-1);
+        modifiedQuickSort(references, values, j+1, last);
+    }
+}
+
+void calculateSimilarities(int *content, int *query, int *similarities, int numberOfFiles, int dictionarySize) {
+    int i;
+    int j;
+    for(i=0;i< numberOfFiles; i++) {
+        similarities[i] = 0;
+        for(j=0;j<dictionarySize;j++) {
+            similarities[i] += pow((double) content[i*dictionarySize + j], (double)query[j]);
+        }
+    }
+}
