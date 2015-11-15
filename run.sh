@@ -1,1 +1,1 @@
-mpirun -n 2 ./a.out 3 5 documents.txt query.txt
+mpirun -n 8 ./a.out 3 15 documents.txt query.txt
